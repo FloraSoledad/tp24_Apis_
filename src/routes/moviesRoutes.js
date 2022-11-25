@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const router = express.Router();
 const moviesController = require('../controllers/moviesController');
@@ -14,5 +15,5 @@ router.put('/movies/update/:id', moviesController.update);
 router.get('/movies/delete/:id', moviesController.delete);
 router.delete('/movies/delete/:id', moviesController.destroy);
 
-router.post('/movies/buscar', moviesController.buscar);
+router.get('/movies/buscar', moviesController.buscar);
 module.exports = router;

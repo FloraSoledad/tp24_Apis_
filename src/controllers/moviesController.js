@@ -4,13 +4,15 @@ const sequelize = db.sequelize;
 const { Op } = require("sequelize");
 const moment = require('moment');
 const fetch = require('node-fetch');
+const { url } = require('inspector');
+const { title } = require('process');
 
 
 //Aqui tienen otra forma de llamar a cada uno de los modelos
 const Movies = db.Movie;
 const Genres = db.Genre;
 const Actors = db.Actor;
-const URL_OMDB = 'http://www.omdbapi.com/?apikey=d4e35e92';
+const URL_OMDB = `http://www.omdbapi.com/?apikey=${process.env.OMDB_APIKEY}` 
 
 const moviesController = {
     'list': (req, res) => {
@@ -56,8 +58,47 @@ const moviesController = {
             });
     },
     //Aqui debo modificar para crear la funcionalidad requerida
-    buscar: (req, res) => {
-        return res.send('holis')
+    buscar: async(req, res) => {
+        try {
+            const{titulo}= req.query;
+            let movie = {}
+
+            let result= await db.Movie.findOne({
+                where: {
+                    title: {
+                        [Op.substring] : titulo
+                    }              
+                }
+            });
+
+            if (result){
+                
+                movie = {
+                    Title: result.title,
+                    Year: new Date (result.release_date).getFullYear(),
+                    Poster: "default.png",
+                    Runtime: result.length
+                }
+
+            } else {
+                let response = await fetch(`http://www.omdbapi.com/?apikey=${process.env.OMDB_APIKEY}&t=${titulo}`)
+                movie= await response.json();
+
+                if(movie){
+                    await db.Movie.create({
+                        title: movie.Title,
+                        awards: movie.awards
+                    })
+                }
+            }
+
+            return res.render('moviesDetailOmdb', {
+                movie: result
+            })
+
+        } catch (error) {
+            console.log(error)
+        }
         
     },
     //Aqui dispongo las rutas para trabajar con el CRUD
